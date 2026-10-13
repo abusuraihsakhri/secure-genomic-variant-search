@@ -3,7 +3,6 @@ FastAPI REST API Server for SecureVariant-Search: Oblivious RAM (ORAM) Path Sear
 """
 import hmac
 import os
-import json
 from typing import Dict, Any
 from .models import FrontierPayload
 from .agents import SecureVariantSearchCoordinator
