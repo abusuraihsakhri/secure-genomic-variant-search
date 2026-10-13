@@ -27,22 +27,22 @@ Requires Python 3.10+.
 
 ~~~bash
 python -m pip install -e '.[server,test]'
-secure-genomic-variant-search audit --task-id SYNTHETIC-01 --target TEST
-secure-genomic-variant-search chat "What does this demo do?"
-secure-genomic-variant-search batch --input sample.csv --output results.csv
-secure-genomic-variant-search verify-audit
+secure-genomic-audit audit --task-id SYNTHETIC-01 --target TEST
+secure-genomic-audit chat "What does this demo do?"
+secure-genomic-audit batch --input sample.csv --output results.csv
+secure-genomic-audit verify-audit
 python -m pytest -q
 node --test tests/web.test.cjs
 ~~~
 
-The Python CLI audits generic numerical metrics using fixed demo thresholds and an in-memory HMAC event chain. The secure_variant_search package contains a separate legacy auditing CLI; the installed command uses the top-level CLI to match the Docker entrypoint. The enrichment.py modules are threshold-based demonstration models rather than implementations of the cryptographic algorithms named by their classes.
+The Python CLI audits generic numerical metrics using fixed demo thresholds and an in-memory HMAC event chain. The original secure-genomic-variant-search command continues to run the legacy secure_variant_search auditing CLI. The secure-genomic-audit command runs the top-level HMAC-auditing CLI, which is also the Docker entrypoint. The enrichment.py modules are threshold-based demonstration models rather than implementations of the cryptographic algorithms named by their classes.
 
 ### HTTP API
 
 ~~~bash
 export AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
 export API_ACCESS_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
-secure-genomic-variant-search serve --host 127.0.0.1 --port 8000
+secure-genomic-audit serve --host 127.0.0.1 --port 8000
 ~~~
 
 GET /health is publicly available; other routes require the X-API-Key header with the value of API_ACCESS_TOKEN, and return an error if no token is configured. The API is **not hardened for direct public Internet exposure**: put it behind TLS, strong network controls, and appropriate authentication/rate limiting for any nonlocal use.
