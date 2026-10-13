@@ -1,99 +1,64 @@
 # Secure Genomic Variant Search
 
-> **Domain:** Clinical Decision Support & Biomedical Computing  
-> **Reference Guidelines & Standards:** `Standard Clinical Formulations & ISO/IEC Quality Frameworks`
+A research repository containing a **local plaintext VCF browser explorer** and Python-based **synthetic metric auditing demonstrations**. The current code does **not** implement Path ORAM, encrypted VCF storage, homomorphic encryption, access-pattern hiding, or privacy-preserving federated search. It must not be used for clinical decision support or considered HIPAA/GDPR compliant.
 
-<div align="center">
+## Browser VCF explorer
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+Open the standalone interface in [web/](web/), or serve it locally:
 
-</div>
+~~~bash
+python -m http.server 8080 --directory web
+~~~
 
----
+Then open http://127.0.0.1:8080/ .
 
-## 📖 What It Does
+- Load a **plain-text, uncompressed VCF** (maximum 10 MiB / 100,000 records), or select the synthetic example.
+- Filter by chromosome, inclusive 1-based coordinate interval, or text in ID/REF/ALT/INFO.
+- Review up to 250 matching records on screen and export all matches to CSV.
+- Chromosomes with and without the "chr" prefix are treated equivalently.
 
-**Secure Genomic Variant Search** is an advanced analytical and computational platform implementing Path Oblivious RAM (ORAM) genetic locus search over encrypted cloud VCF files.
+The browser does not upload genomic files or use a remote API to perform searches. Files and query results remain in browser memory during the session. This is **not** an encrypted/ORAM implementation; use synthetic or appropriately authorized data only. It does not interpret variant pathogenicity, normalize alleles, or perform genotype analysis.
 
----
+GitHub Pages is configured for static deployment via the Pages workflow, but deployment depends on GitHub Pages being enabled for the repository.
 
-## ⚙️ Key Capabilities & Algorithmic Modules
+## Python CLI
 
-- **Deterministic Calculation Engine**: Strict compliance with standard reference formulations and thresholds.
-- **Risk & Urgency Classification**: Multi-tier categorization with automated clinical/operational action recommendations.
-- **Validation & Guardrails**: Rigorous input bounds checking and anomaly detection.
+Requires Python 3.10+.
 
----
+~~~bash
+python -m pip install -e '.[server,test]'
+secure-genomic-variant-search audit --task-id SYNTHETIC-01 --target TEST
+secure-genomic-variant-search chat "What does this demo do?"
+secure-genomic-variant-search batch --input sample.csv --output results.csv
+secure-genomic-variant-search verify-audit
+python -m pytest -q
+node --test tests/web.test.cjs
+~~~
 
-## 💻 CLI Quickstart & Usage
+The Python CLI audits generic numerical metrics using fixed demo thresholds and an in-memory HMAC event chain. The secure_variant_search package contains a separate legacy auditing CLI; the installed command uses the top-level CLI to match the Docker entrypoint. The enrichment.py modules are threshold-based demonstration models rather than implementations of the cryptographic algorithms named by their classes.
 
-### 1. Guided Interactive Mode
-```bash
-python cli.py
-```
+### HTTP API
 
-### 2. Direct Parameterized Evaluation
-```bash
-python cli.py --task-id <value> --target <value> --primary <value> --secondary <value>
-```
+~~~bash
+export AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+export API_ACCESS_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+secure-genomic-variant-search serve --host 127.0.0.1 --port 8000
+~~~
 
-### Parameter Reference
-- `--task-id`: Specifies input measurement or parameter value.
-- `--target`: Specifies input measurement or parameter value.
-- `--primary`: Specifies input measurement or parameter value.
-- `--secondary`: Specifies input measurement or parameter value.
-- `--critical`: Specifies input measurement or parameter value.
-- `--status`: Specifies input measurement or parameter value.
-- `--input`: Specifies input measurement or parameter value.
-- `--output`: Specifies input measurement or parameter value.
+GET /health is publicly available; other routes require the X-API-Key header with the value of API_ACCESS_TOKEN, and return an error if no token is configured. The API is **not hardened for direct public Internet exposure**: put it behind TLS, strong network controls, and appropriate authentication/rate limiting for any nonlocal use.
 
-### Input Data Schema
+### Docker
 
-| Field | Description | Requirement |
-|:------|:------------|:------------|
-| `task_id` | Parameter / observation metric | Required |
-| `target_identifier` | Parameter / observation metric | Required |
-| `primary_metric` | Parameter / observation metric | Required |
-| `secondary_metric` | Parameter / observation metric | Required |
-| `is_critical_flag` | Parameter / observation metric | Required |
-| `status_descriptor` | Parameter / observation metric | Required |
+Copy .env.example to .env, populate both secret variables with independently generated high-entropy values, then run **docker compose up --build**. Docker Compose binds the service to 127.0.0.1:8000 by default; do not publish it externally without additional controls.
 
----
+## Security and limitations
 
-## 🛡️ Security & Enterprise Architecture
+- The identifier-pattern guard is **heuristic**. It cannot guarantee PHI removal or comprehensive de-identification.
+- The HMAC audit chain checks signatures and parent links, but exists **only in process memory**. Without a configured secret it uses a random process-local key, and events cannot be verified across restarts. A production-grade append-only audit backend is not included.
+- The backend retains up to 1,000 recent dossiers in memory; it is not a permanent protected record store.
+- API authentication is a shared static secret. Do not expose it in a browser-based public site.
+- The VCF web application is purely static JavaScript, so no Python/Pyodide runtime is required on GitHub Pages.
 
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
+## Development
 
----
-
-## 🧪 Testing & Verification
-
-Run the automated test suite:
-
-```bash
-pytest -v
-```
-
-Execute high-throughput batch simulation benchmarks:
-
-```bash
-python simulator.py --tasks 1000 --concurrency 8
-```
-
----
-
-## 🐳 Container Deployment
-
-```bash
-docker build -t secure-genomic-variant-search .
-docker run -p 8000:8000 secure-genomic-variant-search
-```
+CI runs Python tests on 3.10, 3.11, 3.12 and Node.js tests for VCF parsing, search, and CSV export. The project uses Python, Pydantic, FastAPI (optional server), and plain browser JavaScript. See the [MIT license](LICENSE).
