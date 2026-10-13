@@ -11,6 +11,25 @@ from .agents import SecureVariantSearchCoordinator
 coordinator = SecureVariantSearchCoordinator()
 
 
+def parse_csv_bool(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    normalized = str(value or "").strip().lower()
+    if normalized in ("1", "true", "yes", "y"):
+        return True
+    if normalized in ("0", "false", "no", "n", ""):
+        return False
+    raise ValueError(f"Invalid boolean flag: {value!r}")
+
+
+def finite_float(value: object) -> float:
+    import math
+    result = float(value)
+    if not math.isfinite(result):
+        raise ValueError("Metrics must be finite numbers")
+    return result
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="secure-genomic-variant-search", description="SecureVariant-Search: Oblivious RAM (ORAM) Path Search over VCF Files")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -74,16 +93,16 @@ def main(argv=None):
             fieldnames = list(reader.fieldnames or [])
             rows = list(reader)
 
-        out_fields = fieldnames + ["overall_status", "total_alerts", "critical_count", "consensus_summary"]
+        out_fields = list(dict.fromkeys(fieldnames + ["overall_status", "total_alerts", "critical_count", "consensus_summary"]))
         out_rows = []
         for r in rows:
             payload = FrontierPayload(
                 task_id=r.get("task_id", "TASK-01"),
                 target_identifier=r.get("target_identifier", "TARGET-01"),
-                primary_metric=float(r.get("primary_metric", 15.0)),
-                secondary_metric=float(r.get("secondary_metric", 5.0)),
+                primary_metric=finite_float(r.get("primary_metric", 15.0)),
+                secondary_metric=finite_float(r.get("secondary_metric", 5.0)),
                 status_descriptor=r.get("status_descriptor", "NOMINAL"),
-                is_critical_flag=bool(r.get("is_critical_flag", False)),
+                is_critical_flag=parse_csv_bool(r.get("is_critical_flag", False)),
             )
             dossier = coordinator.process(payload)
             row_dict = dict(r)
@@ -105,6 +124,9 @@ def main(argv=None):
             import uvicorn
             from .server import create_app
             app = create_app()
+            if app is None:
+                print("FastAPI is unavailable. Install the server dependencies.")
+                return 1
             if app:
                 print(f"Starting SecureVariant-Search: Oblivious RAM (ORAM) Path Search over VCF Files on http://{args.host}:{args.port}")
                 uvicorn.run(app, host=args.host, port=args.port)

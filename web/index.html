@@ -1,236 +1,118 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Genomic Variant Search — Operations Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #090d16;
-            --card: #111827;
-            --border: #1f293d;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.25);
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 2rem;
-            min-height: 100vh;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .header-title h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-        .header-title p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 1.5rem;
-        }
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        input, select, textarea {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            background: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-        .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 100%;
-        }
-        .btn:hover { background: #2563eb; }
-        .terminal {
-            background: #060911;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: #10b981;
-            height: 380px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-        .metrics-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .metric-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .metric-val { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Local plaintext VCF variant lookup and export demonstration. Not an ORAM implementation.">
+  <title>Secure Genomic Variant Search | Local VCF Explorer</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:dark;--bg:#0b1120;--panel:#151f31;--line:#334258;--text:#e7eefb;--muted:#afbed3;--blue:#70b8ff}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);line-height:1.55}
+    main{max-width:1180px;margin:auto;padding:clamp(16px,3vw,40px)}
+    header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:24px}
+    h1{font-size:clamp(1.6rem,3vw,2.2rem);line-height:1.2;margin:0 0 10px}
+    h2{font-size:1.12rem;margin:0 0 16px}
+    p{margin:8px 0;color:var(--muted)}
+    .tag{display:inline-block;padding:3px 9px;border:1px solid var(--line);border-radius:30px;color:var(--blue);font-size:.78rem;margin-right:8px}
+    .notice{border-left:3px solid var(--blue);padding:12px 16px;margin:20px 0 24px;background:#131f32;color:var(--text)}
+    .notice strong{color:#fff}
+    .layout{display:grid;grid-template-columns:minmax(280px,350px) 1fr;gap:20px;align-items:start}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0}
+    label{display:block;font-size:.91rem;font-weight:600;margin:0 0 6px}
+    input{font:inherit;color:var(--text);background:#0c1525;border:1px solid #50617b;border-radius:7px;padding:10px;width:100%;max-width:100%}
+    input:focus-visible,button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+    .field{margin:0 0 15px}
+    .help{font-size:.79rem;color:var(--muted);margin-top:5px}
+    button{border-radius:7px;padding:10px 13px;cursor:pointer;border:1px solid #5b90ce;font:inherit;font-weight:600;background:#225d9c;color:#fff}
+    button.secondary{background:#17283e;border-color:#50617b}
+    button:disabled{opacity:.4;cursor:not-allowed}
+    .actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+    .results-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+    #status{min-height:2.5em;overflow-wrap:anywhere;color:#aee8cd}
+    #status[data-error=true]{color:#ffb2ae}
+    .table-wrap{width:100%;max-height:580px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+    table{border-collapse:collapse;font-size:.83rem;width:100%;min-width:730px}
+    th,td{text-align:left;padding:9px 11px;border-bottom:1px solid #334258;white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis}
+    th{background:#1b3048;position:sticky;top:0;color:#e5effe}
+    td:last-child{max-width:310px}
+    tr:hover td{background:#202e43}
+    #summary{font-size:.86rem;color:var(--muted);margin:8px 0 14px}
+    footer{border-top:1px solid var(--line);margin-top:30px;padding-top:16px;color:var(--muted);font-size:.85rem}
+    @media(max-width:760px){.layout{grid-template-columns:1fr}.panel{padding:16px}main{padding:16px}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+  <script src="./app.js" defer></script>
 </head>
 <body>
+<main>
+  <header>
+    <h1>Secure Genomic Variant Search</h1>
+    <span class="tag">Plaintext VCF explorer</span><span class="tag">Client-side processing</span>
+    <p>Load a local VCF file, filter genomic coordinates, inspect variants, and export matching records.</p>
+  </header>
 
-    <div class="header">
-        <div class="header-title">
-            <h1>Secure Genomic Variant Search</h1>
-            <p>Domain: Clinical & Cryptographic AI | Standard: CAP / CLSI / NIST Standards | LabMind-Atlas Architecture</p>
-        </div>
-        <div>
-            <span class="badge">Air-Gapped Active</span>
-            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Zero-PHI Guard Active</span>
-        </div>
-    </div>
+  <aside class="notice" aria-label="Security and scientific limitations">
+    <strong>Research demonstration, not an encrypted search service.</strong>
+    This browser tool reads plaintext VCF locally. It does <strong>not</strong> implement Path ORAM, encrypted storage,
+    federated search, clinical interpretation, or guaranteed de-identification.
+    Files are processed in browser memory and are not submitted to a server by this application.
+    Use synthetic or appropriately authorized data only.
+  </aside>
 
-    <div class="metrics-bar">
-        <div class="metric-box">
-            <div class="metric-label">System Status</div>
-            <div class="metric-val" style="color: var(--success);" id="m-status">OPTIMAL</div>
+  <div class="layout">
+    <section class="panel" aria-labelledby="input-title">
+      <h2 id="input-title">1. Load and filter</h2>
+      <div class="field">
+        <label for="vcf-file">VCF file</label>
+        <input type="file" id="vcf-file" accept=".vcf,.txt,text/plain">
+        <p class="help">Uncompressed, tab-separated VCF; 10 MiB / 100,000-record limit. Genotypes are not displayed.</p>
+        <p class="help">Source: <span id="source-name">None</span></p>
+      </div>
+      <div class="actions">
+        <button id="demo-button" type="button" class="secondary">Load synthetic example</button>
+      </div>
+      <form id="search-form">
+        <div class="field">
+          <label for="chromosome">Chromosome</label>
+          <input id="chromosome" placeholder="e.g. chr7 or 7" autocomplete="off">
         </div>
-        <div class="metric-box">
-            <div class="metric-label">Tasks Processed</div>
-            <div class="metric-val" id="m-tasks">142</div>
+        <div class="field">
+          <label for="start">Start position (1-based, inclusive)</label>
+          <input id="start" type="number" min="1" step="1" placeholder="Optional">
         </div>
-        <div class="metric-box">
-            <div class="metric-label">Audit Blocks Signed</div>
-            <div class="metric-val" id="m-audit">142</div>
+        <div class="field">
+          <label for="end">End position (1-based, inclusive)</label>
+          <input id="end" type="number" min="1" step="1" placeholder="Optional">
         </div>
-        <div class="metric-box">
-            <div class="metric-label">PHI Interceptions</div>
-            <div class="metric-val" style="color: var(--accent);" id="m-phi">0</div>
+        <div class="field">
+          <label for="text">Text filter (ID, REF, ALT, INFO)</label>
+          <input id="text" placeholder="e.g. DEMO2" autocomplete="off">
         </div>
-    </div>
-
-    <div class="grid">
-        <div class="card">
-            <h2>⚙️ Dispatch Distributed Component Audit</h2>
-            <div class="form-group">
-                <label>Task / Sample ID</label>
-                <input type="text" id="task_id" value="TASK-2026-LIVE-01">
-            </div>
-            <div class="form-group">
-                <label>Target Identifier</label>
-                <input type="text" id="target_id" value="SPECIMEN-ALPHA-77">
-            </div>
-            <div class="form-group">
-                <label>Primary Measurement / Value</label>
-                <input type="number" id="primary_metric" value="29.4" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Secondary Metric / Kinetic Index</label>
-                <input type="number" id="secondary_metric" value="14.8" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Status / Phenotype Descriptor</label>
-                <input type="text" id="status_descriptor" value="DISCORDANT_ANOMALY">
-            </div>
-            <div class="form-group">
-                <label><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
-            </div>
-            <button class="btn" onclick="runAudit()">Execute Distributed Component Audit</button>
+        <div class="actions">
+          <button type="submit">Search variants</button>
+          <button type="button" class="secondary" id="clear-button">Clear filters</button>
         </div>
-
-        <div class="card">
-            <h2>📊 Real-Time Consensus Dossier & Audit Log</h2>
-            <div class="terminal" id="outputConsole">// Secure Genomic Variant Search Operations Console Ready
-// Connection established with Air-Gapped Supervisor
-// Cryptographic HMAC-SHA256 audit ledger loaded.
-// Ready for live task payload dispatch...</div>
-        </div>
-    </div>
-
-    <script>
-        async function runAudit() {
-            const consoleEl = document.getElementById('outputConsole');
-            consoleEl.innerText = "// Dispatching task across specialized workers...
-// Invoking InvariantQCWorker, SafetyEscalationWorker, ProtocolWorker...";
-
-            const payload = {
-                task_id: document.getElementById('task_id').value,
-                target_identifier: document.getElementById('target_id').value,
-                primary_metric: parseFloat(document.getElementById('primary_metric').value),
-                secondary_metric: parseFloat(document.getElementById('secondary_metric').value),
-                status_descriptor: document.getElementById('status_descriptor').value,
-                is_critical_flag: document.getElementById('is_critical').checked
-            };
-
-            try {
-                const res = await fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                consoleEl.innerText = JSON.stringify(data, null, 2);
-                document.getElementById('m-tasks').innerText = parseInt(document.getElementById('m-tasks').innerText) + 1;
-                document.getElementById('m-audit').innerText = parseInt(document.getElementById('m-audit').innerText) + 1;
-            } catch (err) {
-                consoleEl.innerText = "// Offline / Simulation Output:\n" + JSON.stringify({
-                    dossier_id: "DOSSIER-SIM-" + Math.floor(Math.random()*10000),
-                    system: "secure-genomic-variant-search",
-                    domain: "Clinical & Cryptographic AI",
-                    task_id: payload.task_id,
-                    overall_urgency: payload.is_critical_flag ? "CRITICAL_STAT_PANIC" : "ELEVATED_RISK",
-                    integrity_status: "DISCORDANT_ANOMALY",
-                    alerts: [
-                        { worker: "InvariantQCWorker", alert: "Primary metric exceeds upper reference bound" },
-                        { worker: "SafetyEscalationWorker", alert: "Critical emergency interlock flag active" }
-                    ],
-                    audit_hash: "HMAC_SHA256_e83f9a72b941d6c381f9"
-                }, null, 2);
-            }
-        }
-    </script>
+      </form>
+      <p id="status" role="status" aria-live="polite">Load a VCF to begin.</p>
+    </section>
+    <section class="panel" aria-labelledby="results-title">
+      <div class="results-head">
+        <h2 id="results-title">2. Matching variants</h2>
+        <button type="button" id="export-button" disabled>Export results CSV</button>
+      </div>
+      <p id="summary">No VCF records loaded</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable results table">
+        <table>
+          <thead><tr><th scope="col">CHROM</th><th scope="col">POS</th><th scope="col">ID</th><th scope="col">REF</th><th scope="col">ALT</th><th scope="col">QUAL</th><th scope="col">FILTER</th><th scope="col">INFO</th></tr></thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+      <p class="help">Up to 250 matches appear in the table. CSV export includes all matches, up to the 100,000-record input limit.</p>
+    </section>
+  </div>
+  <footer>Standalone static demonstration · Modern browsers · No Python runtime required · No diagnosis or clinical recommendation</footer>
+</main>
 </body>
 </html>

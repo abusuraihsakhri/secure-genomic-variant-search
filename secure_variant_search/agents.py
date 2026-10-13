@@ -98,6 +98,8 @@ class SecureVariantSearchCoordinator:
         }
 
         self.execution_ledger[payload.task_id] = dossier
+        if len(self.execution_ledger) > 1000:
+            self.execution_ledger.pop(next(iter(self.execution_ledger)))
         return dossier
 
     def query_supervisory_chat(self, query: str) -> str:

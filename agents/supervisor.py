@@ -19,12 +19,11 @@ class SystemSupervisor:
         self.conformance_worker = ProtocolConformanceWorker()
         self.llm = LLMFactory.create(model_provider, system_name="Secure Genomic Variant Search")
         self.dossier_registry: Dict[str, ConsensusDossier] = {}
+        self.processed_count = 0
 
     def process_task(self, payload: SystemTaskPayload, actor: str = "SystemSupervisor") -> ConsensusDossier:
         # Zero-PHI outbound validation
-        PHIGuard.assert_no_phi(payload.task_id)
-        PHIGuard.assert_no_phi(payload.target_identifier)
-        PHIGuard.assert_no_phi(payload.status_descriptor)
+        PHIGuard.assert_no_phi(payload.model_dump_json())
 
         # Multi-worker evaluations
         all_alerts: List[AgentAlert] = []
@@ -70,10 +69,13 @@ class SystemSupervisor:
             audit_hash=audit_entry["current_hash"],
         )
 
+        self.processed_count += 1
         self.dossier_registry[dossier.dossier_id] = dossier
+        if len(self.dossier_registry) > 1000:
+            self.dossier_registry.pop(next(iter(self.dossier_registry)))
         return dossier
 
     def query_supervisory_chat(self, query: str) -> str:
         PHIGuard.assert_no_phi(query)
-        prompt = f"Supervisor inquiry for Secure Genomic Variant Search under CAP / CLSI / ISO Standards: {query}"
+        prompt = f"Demonstration inquiry with unvalidated thresholds: {query}"
         return self.llm.invoke(prompt)

@@ -1,7 +1,7 @@
 """
-Secure Genomic Variant Search — Enterprise Automated Analytical Suite.
+Secure Genomic Variant Search — Synthetic Metric Audit Demonstration.
 Domain: Clinical & Biomedical AI
-Standard: CAP / CLSI / ISO Standards
+Standard: Unvalidated demonstration threshold rules
 
 """
-__version__ = "3.0.0-ENTERPRISE"
+__version__ = "3.0.1"
