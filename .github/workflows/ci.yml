@@ -31,7 +31,9 @@ jobs:
       - name: Test
         run: python -m pytest -q
       - name: Installed CLI smoke test
-        run: secure-genomic-variant-search audit --task-id CI-SYNTHETIC --target TEST
+        run: |
+          secure-genomic-audit audit --task-id CI-SYNTHETIC --target TEST
+          secure-genomic-variant-search audit --task-id CI-SYNTHETIC --target TEST
 
   browser:
     runs-on: ubuntu-latest
