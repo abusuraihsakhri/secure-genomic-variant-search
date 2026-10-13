@@ -1,13 +1,12 @@
-version: '3.8'
-
 services:
   secure-genomic-variant-search:
     build: .
     container_name: secure-genomic-variant-search
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
-      - AUDIT_SECRET_KEY=secure-genomic-variant-search-prod-audit-key-2026
+      - AUDIT_SECRET_KEY=${AUDIT_SECRET_KEY:?Set a unique AUDIT_SECRET_KEY}
+      - API_ACCESS_TOKEN=${API_ACCESS_TOKEN:?Set a unique API_ACCESS_TOKEN}
       - MODEL_PROVIDER=mock
     restart: unless-stopped
     healthcheck:
