@@ -83,3 +83,19 @@ def test_non_finite_metrics_rejected_by_api(monkeypatch):
         "primary_metric": "NaN",
     }, headers={"x-api-key": "unique-test-token"})
     assert response.status_code == 422
+
+
+def test_legacy_api_requires_authentication(monkeypatch):
+    from secure_variant_search.server import create_app
+
+    app = create_app()
+    assert app is not None
+    client = TestClient(app)
+    monkeypatch.delenv("API_ACCESS_TOKEN", raising=False)
+    assert client.post("/api/chat", json={"query": "status"}).status_code == 503
+    monkeypatch.setenv("API_ACCESS_TOKEN", "legacy-test-token")
+    assert client.post("/api/chat", json={"query": "status"}).status_code == 401
+    assert client.post(
+        "/api/chat", json={"query": "status"},
+        headers={"x-api-key": "legacy-test-token"},
+    ).status_code == 200
