@@ -14,7 +14,7 @@ supervisor = SystemSupervisor(model_provider="mock")
 
 
 def require_api_key(x_api_key: str = Header(default="")) -> None:
-    """Fail closed unless an API_ACCESS_TOKEN is supplied at startup."""
+    """Fail closed unless API_ACCESS_TOKEN is configured."""
     expected = os.environ.get("API_ACCESS_TOKEN", "")
     if not expected:
         raise HTTPException(status_code=503, detail="API authentication is not configured")
@@ -34,13 +34,13 @@ class ChatRequest(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "HEALTHY", "service": "secure-genomic-variant-search", "domain": "Clinical & Biomedical AI", "standard": "Unvalidated demo rules", "version": "3.0.1-DEMO"}
+    return {"status": "HEALTHY", "service": "secure-genomic-variant-search", "domain": "Synthetic metric audit", "standard": "Unvalidated demo rules", "version": "3.0.1-DEMO"}
 
 
 @app.get("/metrics", dependencies=[Depends(require_api_key)])
 def metrics():
     return {
-        "dossiers_processed_total": len(supervisor.dossier_registry),
+        "dossiers_processed_total": supervisor.processed_count,
         "audit_blocks_total": len(AuditLogger.get_trail()),
         "system_status": "NOMINAL_OPTIMAL"
     }
