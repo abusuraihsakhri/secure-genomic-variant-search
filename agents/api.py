@@ -23,8 +23,8 @@ def require_api_key(x_api_key: str = Header(default="")) -> None:
 
 app = FastAPI(
     title="Secure Genomic Variant Search API",
-    description="Enterprise Distributed Component Platform (Clinical & Biomedical AI)",
-    version="3.0.0-ENTERPRISE",
+    description="Synthetic metric auditing demonstration; no clinical or ORAM validation",
+    version="3.0.1-DEMO",
 )
 
 
@@ -34,7 +34,7 @@ class ChatRequest(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "HEALTHY", "service": "secure-genomic-variant-search", "domain": "Clinical & Biomedical AI", "standard": "CAP / CLSI / ISO Standards", "version": "3.0.0-ENTERPRISE"}
+    return {"status": "HEALTHY", "service": "secure-genomic-variant-search", "domain": "Clinical & Biomedical AI", "standard": "Unvalidated demo rules", "version": "3.0.1-DEMO"}
 
 
 @app.get("/metrics", dependencies=[Depends(require_api_key)])
