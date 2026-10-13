@@ -1,7 +1,7 @@
 """
 Pydantic v2 schemas and data definitions for Secure Genomic Variant Search.
 Domain: Clinical & Biomedical AI
-Standard: CAP / CLSI / ISO Standards
+Standard: Unvalidated demonstration threshold rules
 """
 import datetime
 from enum import Enum
