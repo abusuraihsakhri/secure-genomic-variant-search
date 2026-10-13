@@ -24,7 +24,8 @@ server = ["fastapi>=0.110,<1", "uvicorn>=0.29,<1"]
 test = ["pytest>=8,<10", "httpx>=0.27,<1"]
 
 [project.scripts]
-secure-genomic-variant-search = "cli:main"
+secure-genomic-variant-search = "secure_variant_search.cli:main"
+secure-genomic-audit = "cli:main"
 
 [project.urls]
 Homepage = "https://github.com/abusuraihsakhri/secure-genomic-variant-search"
