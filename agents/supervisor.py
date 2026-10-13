@@ -19,6 +19,7 @@ class SystemSupervisor:
         self.conformance_worker = ProtocolConformanceWorker()
         self.llm = LLMFactory.create(model_provider, system_name="Secure Genomic Variant Search")
         self.dossier_registry: Dict[str, ConsensusDossier] = {}
+        self.processed_count = 0
 
     def process_task(self, payload: SystemTaskPayload, actor: str = "SystemSupervisor") -> ConsensusDossier:
         # Zero-PHI outbound validation
@@ -68,6 +69,7 @@ class SystemSupervisor:
             audit_hash=audit_entry["current_hash"],
         )
 
+        self.processed_count += 1
         self.dossier_registry[dossier.dossier_id] = dossier
         if len(self.dossier_registry) > 1000:
             self.dossier_registry.pop(next(iter(self.dossier_registry)))
