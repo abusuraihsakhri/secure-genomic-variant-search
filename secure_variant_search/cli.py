@@ -124,6 +124,9 @@ def main(argv=None):
             import uvicorn
             from .server import create_app
             app = create_app()
+            if app is None:
+                print("FastAPI is unavailable. Install the server dependencies.")
+                return 1
             if app:
                 print(f"Starting SecureVariant-Search: Oblivious RAM (ORAM) Path Search over VCF Files on http://{args.host}:{args.port}")
                 uvicorn.run(app, host=args.host, port=args.port)
