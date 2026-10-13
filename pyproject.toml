@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "secure-genomic-variant-search"
 version = "3.0.1"
-description = "SecureVariant-Search: Oblivious RAM (ORAM) Path Search over VCF Files"
+description = "Plaintext browser VCF lookup and synthetic Python metric audit demonstrations"
 readme = "README.md"
 authors = [{ name = "Dr. Abu Suraih Sakhri", email = "abusuraih@example.com" }]
 license = { text = "MIT" }
@@ -13,8 +13,6 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Topic :: Security/Cryptography",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 requires-python = ">=3.10"
 dependencies = ["pydantic>=2,<3"]
