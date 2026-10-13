@@ -1,22 +1,24 @@
-"""
-Enterprise Security, PHI Outbound Guard, and HMAC-SHA256 Audit Trail.
+"""Local heuristic identifier screening and in-memory HMAC audit chain.
 
+Identifier screening is not comprehensive de-identification or a HIPAA/GDPR
+compliance guarantee. Audit records are volatile and are not a durable ledger.
 """
+import copy
+import hashlib
+import hmac
+import json
 import os
 import re
-import json
+import secrets
 import time
-import hmac
-import hashlib
-from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field
+from typing import Any, Dict, List, Optional
 
 PHI_PATTERNS = [
-    re.compile(r"\b(?:MRN|mrn)[:#\s-]*\d{4,10}\b", re.IGNORECASE),
+    re.compile(r"\bMRN[:#\s-]*\d{4,10}\b", re.IGNORECASE),
     re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
     re.compile(r"\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b"),
-    re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
+    re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
     re.compile(r"\b(?:DOB|Date of Birth)[:\s]*\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", re.IGNORECASE),
     re.compile(r"\b(?:Patient\s+Name|Patient)[:\s]+[A-Z][a-z]+\s+[A-Z][a-z]+\b", re.IGNORECASE),
     re.compile(r"\b(?:John\s+Doe|Jane\s+Smith|Alice\s+Johnson)\b", re.IGNORECASE),
@@ -24,13 +26,11 @@ PHI_PATTERNS = [
 
 
 class SecurityException(Exception):
-    """Raised when outbound data violates HIPAA Safe Harbor or contains raw PHI."""
-    pass
+    """Raised when text matches a known identifier pattern."""
 
 
 class ResourceLimitExceededException(Exception):
     """Raised when computational parameters exceed safety bounds."""
-    pass
 
 
 def assert_no_phi(text: str) -> None:
@@ -38,7 +38,7 @@ def assert_no_phi(text: str) -> None:
         return
     for pattern in PHI_PATTERNS:
         if pattern.search(str(text)):
-            raise SecurityException(f"PHI Outbound Guard Violation: Sensitive identifier detected with pattern {pattern.pattern}")
+            raise SecurityException("Potential sensitive identifier detected; request rejected")
 
 
 class PHIGuard:
@@ -48,49 +48,66 @@ class PHIGuard:
 
     @staticmethod
     def redact_phi(text: str) -> str:
-        res = str(text)
+        result = str(text)
         for pattern in PHI_PATTERNS:
-            res = pattern.sub("[REDACTED_IDENTIFIER]", res)
-        return res
+            result = pattern.sub("[REDACTED_IDENTIFIER]", result)
+        return result
 
 
 class AuditTrail:
-    """Cryptographic Tamper-Evident HMAC-SHA256 Audit Trail."""
+    """Process-local hash chain with independently checked HMAC signatures.
+
+    When AUDIT_SECRET_KEY is absent, a random per-process key is generated;
+    such a key cannot verify records after a restart.
+    """
+
+    GENESIS = "GENESIS_BLOCK_0000000000000000"
+
     def __init__(self, secret_key: Optional[str] = None):
-        self.secret_key = (secret_key or os.getenv("AUDIT_SECRET_KEY", "secure-genomic-variant-search-master-audit-key-2026")).encode("utf-8")
+        configured = secret_key if secret_key is not None else os.getenv("AUDIT_SECRET_KEY")
+        self.secret_key = configured.encode("utf-8") if configured else secrets.token_bytes(32)
         self.logs: List[Dict[str, Any]] = []
+
+    def _signature(self, entry: Dict[str, Any]) -> str:
+        sign_string = "|".join(str(entry[k]) for k in (
+            "audit_id", "timestamp", "actor", "actor_tier",
+            "event_type", "payload_hash", "prev_hash",
+        ))
+        return hmac.new(self.secret_key, sign_string.encode("utf-8"), hashlib.sha256).hexdigest()
 
     def log(self, actor: str, actor_tier: str, event_type: str, details: Dict[str, Any]) -> Dict[str, Any]:
         payload_str = json.dumps(details, sort_keys=True)
         assert_no_phi(payload_str)
-        payload_hash = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
-        audit_id = f"AUDIT-{int(time.time()*1000)}-{len(self.logs)+1}"
-        ts = datetime.now(timezone.utc).isoformat()
-        prev_hash = self.logs[-1]["current_hash"] if self.logs else "GENESIS_BLOCK_0000000000000000"
-        sign_string = f"{audit_id}|{ts}|{actor}|{actor_tier}|{event_type}|{payload_hash}|{prev_hash}"
-        signature = hmac.new(self.secret_key, sign_string.encode("utf-8"), hashlib.sha256).hexdigest()
         entry = {
-            "audit_id": audit_id,
-            "timestamp": ts,
+            "audit_id": f"AUDIT-{int(time.time() * 1000)}-{len(self.logs) + 1}",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "actor": actor,
             "actor_tier": actor_tier,
             "event_type": event_type,
-            "payload_hash": payload_hash,
-            "prev_hash": prev_hash,
-            "current_hash": signature,
+            "payload_hash": hashlib.sha256(payload_str.encode("utf-8")).hexdigest(),
+            "prev_hash": self.logs[-1]["current_hash"] if self.logs else self.GENESIS,
         }
+        entry["current_hash"] = self._signature(entry)
         self.logs.append(entry)
-        return entry
+        return copy.deepcopy(entry)
 
     def verify_integrity(self) -> bool:
-        for i, entry in enumerate(self.logs):
-            prev = self.logs[i-1]["current_hash"] if i > 0 else "GENESIS_BLOCK_0000000000000000"
-            if entry["prev_hash"] != prev:
+        previous = self.GENESIS
+        for entry in self.logs:
+            try:
+                if entry["prev_hash"] != previous:
+                    return False
+                actual = entry["current_hash"]
+                expected = self._signature(entry)
+                if not hmac.compare_digest(actual, expected):
+                    return False
+                previous = actual
+            except (KeyError, TypeError, ValueError):
                 return False
         return True
 
     def get_trail(self) -> List[Dict[str, Any]]:
-        return self.logs
+        return copy.deepcopy(self.logs)
 
 
 GLOBAL_AUDIT = AuditTrail()
@@ -113,6 +130,6 @@ class AuditLogger:
 class ActionExecutor:
     @staticmethod
     def execute_with_audit(actor: str, actor_tier: str, action_type: str, fn, *args, **kwargs):
-        res = fn(*args, **kwargs)
+        result = fn(*args, **kwargs)
         AuditLogger.log(actor, actor_tier, action_type, {"status": "SUCCESS"})
-        return res
+        return result
